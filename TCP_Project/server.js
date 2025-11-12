@@ -26,4 +26,39 @@ const server = net.createServer((socket) => {
   const role = connections.size === 0 ? 'admin' : 'user';
   connections.set(socket, { id: clientId, role, messages: 0, lastActive: Date.now() });
 
-  
+  console.log(` New connection: ${clientId} (${role})`);
+  socket.write(`Connected to server as ${role}\n`);
+
+  socket.on('data', async (data) => {
+    const client = connections.get(socket);
+    if (!client) return;
+
+    totalTraffic += data.length;
+    client.lastActive = Date.now();
+
+    const msg = data.toString().trim();
+    client.messages++;
+    messageLog.push(`[${new Date().toISOString()}] ${client.id}: ${msg}`);
+    console.log(` [${client.id}] -> ${msg}`);
+
+    if (client.role === 'admin' && msg.startsWith('/')) {
+      await handleAdminCommand(socket, msg);
+    } else if (msg.toUpperCase() === 'STATS') {
+      sendStats(socket);
+    } else {
+      socket.write(`Server received: ${msg}\n`);
+    }
+
+    updateStatsFile();
+  });
+
+  socket.on('end', () => {
+    console.log(` ${clientId} disconnected`);
+    connections.delete(socket);
+    updateStatsFile();
+  });
+
+  socket.on('error', () => {
+    connections.delete(socket);
+    updateStatsFile();
+  });
