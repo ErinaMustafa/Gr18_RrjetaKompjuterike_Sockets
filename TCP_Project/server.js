@@ -1,3 +1,12 @@
 const net = require('net');
 const fs = require('fs');
 const path = require('path');
+const PORT = 6000;
+const HOST = '0.0.0.0';
+const MAX_CONNECTIONS = 5;
+const USER_TIMEOUT = 30000;
+const ADMIN_TIMEOUT = 10000;
+let connections = new Map();
+let totalTraffic = 0;
+let messageLog = [];
+const STATS_FILE = 'server_stats.txt';
