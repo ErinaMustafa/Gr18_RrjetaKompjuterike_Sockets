@@ -26,3 +26,21 @@ klient.on('close', () => {
     console.log(' Lidhja me serverin u mbyll.');
     process.exit(0);
 });
+
+
+klient.on('error', (err) => {
+    console.log(' Gabim: ' + err.message);
+});
+
+
+rl.on('line', (input) => {
+    const trimmed = input.trim();
+    if (trimmed.toUpperCase() === 'ADMIN') {
+
+        rl.question('Fjalëkalimi i adminit: ', (pwd) => {
+            klient.write(`ADMIN ${pwd}`);
+        });
+    } else {
+        klient.write(input);
+    }
+});
