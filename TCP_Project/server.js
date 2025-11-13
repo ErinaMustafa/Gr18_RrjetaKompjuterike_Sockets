@@ -58,8 +58,7 @@ const server = net.createServer((socket) => {
         console.log(`[${adresaKlientit}]: ${mesazhi}`);
         fs.appendFileSync('server_log.txt', `[${new Date().toISOString()}] ${adresaKlientit}: ${mesazhi}\n`);
 
-        // Kontroll për komandën ADMIN me fjalëkalim:
-        // Miraton formatin: "ADMIN <password>"
+
         if (mesazhi.toUpperCase().startsWith('ADMIN')) {
             const parts = mesazhi.split(' ');
             if (parts.length < 2) {
@@ -83,7 +82,6 @@ const server = net.createServer((socket) => {
             return;
         }
 
-        // STATS
         if (mesazhi === 'STATS') {
             let info = `Statistika:\nLidhje aktive: ${statistika.lidhjeAktive}\nKlientë aktivë:\n`;
             for (let k of klientet) {
@@ -101,7 +99,6 @@ const server = net.createServer((socket) => {
             return;
         }
 
-        // Komandat ekzistuese: /list, /read, /delete, /info, /upload, /search
         if (mesazhi.startsWith('/list')) {
             const files = fs.readdirSync('./server_files');
             socket.write('File në server:\n' + files.join('\n') + '\n');
