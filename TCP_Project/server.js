@@ -49,3 +49,36 @@ const server = net.createServer((socket) => {
         socket.write('Nuk u dërgua asnjë mesazh për 30 sekonda, lidhja po mbyllet.\n');
         socket.destroy();
     });
+
+      socket.on('data', (data) => {
+        const mesazhi = data.toString().trim();
+        statistika.trafikuTotalBytes += Buffer.byteLength(data);
+        statistika.mesazhePerKlient[adresaKlientit]++;
+
+        console.log(`💬 [${adresaKlientit}]: ${mesazhi}`);
+        fs.appendFileSync('server_log.txt', `[${new Date().toISOString()}] ${adresaKlientit}: ${mesazhi}\n`);
+
+        // Kontroll për komandën ADMIN me fjalëkalim:
+        // Miraton formatin: "ADMIN <password>"
+        if (mesazhi.toUpperCase().startsWith('ADMIN')) {
+            const parts = mesazhi.split(' ');
+            if (parts.length < 2) {
+                socket.write('Përdor: ADMIN <password>\n');
+                return;
+            }
+            const provided = parts.slice(1).join(' ');
+            socket.adminAttempts++;
+            if (provided === ADMIN_PASSWORD) {
+                socket.isAdmin = true;
+                socket.write('Identifikim si ADMIN u kry me sukses.\n');
+                console.log(`Klienti ${adresaKlientit} u bë ADMIN`);
+            } else {
+                socket.write('Fjalëkalim i pasaktë.\n');
+                // Opsional: blloko pasi tre tentativat dështojnë
+                if (socket.adminAttempts >= 3) {
+                    socket.write('Shumë tentativë te pasakta. Lidhja po mbyllet.\n');
+                    socket.destroy();
+                }
+            }
+            return;
+        }
