@@ -95,3 +95,8 @@ const server = net.createServer((socket) => {
             return;
         }
 
+        const adminCommands = ['/list', '/read', '/delete', '/upload', '/download', '/search', '/info'];
+        if (adminCommands.some(cmd => mesazhi.startsWith(cmd)) && !socket.isAdmin) {
+            socket.write('Nuk ke privilegje të mjaftueshme për këtë komandë. Përdor ADMIN <password> për t\'u identifikuar.\n');
+            return;
+        }
