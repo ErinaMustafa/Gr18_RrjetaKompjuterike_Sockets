@@ -1,67 +1,54 @@
+
 const net = require('net');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 6000;
-const HOST = '0.0.0.0'; 
-const MAX_CONNECTIONS = 5;
-const USER_TIMEOUT = 30000; 
-const ADMIN_TIMEOUT = 10000; 
+const PORTI = 4000;
+const IP_ADRESA = '0.0.0.0';
+const MAKS_KLIENTE = 4;
 
-let connections = new Map();
-let totalTraffic = 0;
-let messageLog = [];
-const STATS_FILE = 'server_stats.txt';
-const SERVER_FILES = './server_files';
-if (!fs.existsSync(SERVER_FILES)) fs.mkdirSync(SERVER_FILES);
+
+const ADMIN_PASSWORD = 'letmein';
+
+if (!fs.existsSync('./server_files')) fs.mkdirSync('./server_files');
+
+let klientet = [];
+let statistika = {
+    lidhjeAktive: 0,
+    mesazhePerKlient: {},
+    trafikuTotalBytes: 0,
+};
+
+setInterval(() => {
+    let statsData = `${new Date().toLocaleString()}\n` +
+        `Lidhje aktive: ${statistika.lidhjeAktive}\n` +
+        `Trafik total: ${statistika.trafikuTotalBytes} bytes\n` +
+        `------------------------------\n`;
+    fs.writeFileSync('server_stats.txt', statsData);
+}, 10000);
 
 const server = net.createServer((socket) => {
-  if (connections.size >= MAX_CONNECTIONS) {
-    socket.write('Server is full, try again later.\n');
-    socket.end();
-    return;
-  }
 
-  const clientId = `${socket.remoteAddress}:${socket.remotePort}`;
-  const role = connections.size === 0 ? 'admin' : 'user';
-  connections.set(socket, { id: clientId, role, messages: 0, lastActive: Date.now() });
-
-  console.log(` New connection: ${clientId} (${role})`);
-  socket.write(`Connected to server as ${role}\n`);
-
-  socket.on('data', async (data) => {
-    const client = connections.get(socket);
-    if (!client) return;
-
-    totalTraffic += data.length;
-    client.lastActive = Date.now();
-
-    const msg = data.toString().trim();
-    client.messages++;
-    messageLog.push(`[${new Date().toISOString()}] ${client.id}: ${msg}`);
-    console.log(` [${client.id}] -> ${msg}`);
-
-    if (client.role === 'admin' && msg.startsWith('/')) {
-      await handleAdminCommand(socket, msg);
-    } else if (msg.toUpperCase() === 'STATS') {
-      sendStats(socket);
-    } else {
-      socket.write(`Server received: ${msg}\n`);
+    if (klientet.length >= MAKS_KLIENTE) {
+        socket.write('Serveri është i mbushur. Prit pak...\n');
+        socket.destroy();
+        return;
     }
 
-    updateStatsFile();
-  });
+    const adresaKlientit = `${socket.remoteAddress}:${socket.remotePort}`;
+    socket.isAdmin = false;
+    socket.adminAttempts = 0; 
+    klientet.push(socket);
+    statistika.lidhjeAktive++;
+    statistika.mesazhePerKlient[adresaKlientit] = 0;
 
-  socket.on('end', () => {
-    console.log(` ${clientId} disconnected`);
-    connections.delete(socket);
-    updateStatsFile();
-  });
+    console.log(` Klient i ri u lidh: ${adresaKlientit}`);
 
-  socket.on('error', () => {
-    connections.delete(socket);
-    updateStatsFile();
-  });
+    socket.setTimeout(30000);
+    socket.on('timeout', () => {
+        socket.write('Nuk u dërgua asnjë mesazh për 30 sekonda, lidhja po mbyllet.\n');
+        socket.destroy();
+    });
 
   const interval = setInterval(() => {
     const client = connections.get(socket);
