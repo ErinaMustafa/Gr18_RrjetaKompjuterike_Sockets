@@ -58,7 +58,6 @@ const server = net.createServer((socket) => {
         console.log(`[${adresaKlientit}]: ${mesazhi}`);
         fs.appendFileSync('server_log.txt', `[${new Date().toISOString()}] ${adresaKlientit}: ${mesazhi}\n`);
 
-
         if (mesazhi.toUpperCase().startsWith('ADMIN')) {
             const parts = mesazhi.split(' ');
             if (parts.length < 2) {
@@ -73,7 +72,6 @@ const server = net.createServer((socket) => {
                 console.log(`Klienti ${adresaKlientit} u bë ADMIN`);
             } else {
                 socket.write('Fjalëkalim i pasaktë.\n');
-                // Opsional: blloko pasi tre tentativat dështojnë
                 if (socket.adminAttempts >= 3) {
                     socket.write('Shumë tentativë te pasakta. Lidhja po mbyllet.\n');
                     socket.destroy();
@@ -98,14 +96,12 @@ const server = net.createServer((socket) => {
             socket.write('Nuk ke privilegje të mjaftueshme për këtë komandë. Përdor ADMIN <password> për t\'u identifikuar.\n');
             return;
         }
-
         if (mesazhi.startsWith('/list')) {
             const files = fs.readdirSync('./server_files');
             socket.write('File në server:\n' + files.join('\n') + '\n');
-
         } else if (mesazhi.startsWith('/read')) {
             const parts = mesazhi.split(' ');
-            if (parts.length < 2) return socket.write('❌ Përdorimi: /read <filename>\n');
+            if (parts.length < 2) return socket.write('Përdorimi: /read <filename>\n');
             const filePath = path.join('./server_files', parts[1]);
             if (fs.existsSync(filePath)) {
                 socket.write('Përmbajtja:\n' + fs.readFileSync(filePath, 'utf8') + '\n');
