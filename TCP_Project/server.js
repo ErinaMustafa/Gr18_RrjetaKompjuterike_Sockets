@@ -120,3 +120,46 @@ async function handleAdminCommand(socket, msg) {
         );
       } else socket.write('File not found.\n');
       break;
+
+      case '/search':
+      if (!args[1]) return socket.write('Usage: /search <keyword>\n');
+      fs.readdir(SERVER_FILES, (err, files) => {
+        if (err) return socket.write('Error reading directory\n');
+        const matches = files.filter(f => f.includes(args[1]));
+        socket.write('Found:\n' + (matches.join('\n') || 'No matches') + '\n');
+      });
+      break;
+
+    default:
+      socket.write('Unknown command.\n');
+  }
+}
+
+function sendStats(socket) {
+  const stats = `
+Active connections: ${connections.size}
+Clients:
+${Array.from(connections.values())
+  .map(c => ` - ${c.id} (${c.role}) [${c.messages} msgs]`)
+  .join('\n')}
+Total traffic: ${totalTraffic} bytes
+`;
+  socket.write(stats + '\n');
+}
+
+function updateStatsFile() {
+  const content = `
+Time: ${new Date().toISOString()}
+Active connections: ${connections.size}
+Total traffic: ${totalTraffic} bytes
+Clients:
+${Array.from(connections.values())
+  .map(c => ` - ${c.id} (${c.role}) [${c.messages} msgs]`)
+  .join('\n')}
+`;
+  fs.writeFileSync(STATS_FILE, content);
+}
+
+server.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
+});
