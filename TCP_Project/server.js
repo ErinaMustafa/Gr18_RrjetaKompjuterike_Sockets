@@ -100,3 +100,16 @@ const server = net.createServer((socket) => {
             socket.write('Nuk ke privilegje të mjaftueshme për këtë komandë. Përdor ADMIN <password> për t\'u identifikuar.\n');
             return;
         }
+
+        // Komandat ekzistuese: /list, /read, /delete, /info, /upload, /search
+        if (mesazhi.startsWith('/list')) {
+            const files = fs.readdirSync('./server_files');
+            socket.write('File në server:\n' + files.join('\n') + '\n');
+
+        } else if (mesazhi.startsWith('/read')) {
+            const parts = mesazhi.split(' ');
+            if (parts.length < 2) return socket.write('❌ Përdorimi: /read <filename>\n');
+            const filePath = path.join('./server_files', parts[1]);
+            if (fs.existsSync(filePath)) {
+                socket.write('Përmbajtja:\n' + fs.readFileSync(filePath, 'utf8') + '\n');
+            } else socket.write('File nuk ekziston.\n');
