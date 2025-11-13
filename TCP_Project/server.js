@@ -55,7 +55,7 @@ const server = net.createServer((socket) => {
         statistika.trafikuTotalBytes += Buffer.byteLength(data);
         statistika.mesazhePerKlient[adresaKlientit]++;
 
-        console.log(`💬 [${adresaKlientit}]: ${mesazhi}`);
+        console.log(`[${adresaKlientit}]: ${mesazhi}`);
         fs.appendFileSync('server_log.txt', `[${new Date().toISOString()}] ${adresaKlientit}: ${mesazhi}\n`);
 
         // Kontroll për komandën ADMIN me fjalëkalim:
@@ -82,3 +82,16 @@ const server = net.createServer((socket) => {
             }
             return;
         }
+
+        // STATS
+        if (mesazhi === 'STATS') {
+            let info = `Statistika:\nLidhje aktive: ${statistika.lidhjeAktive}\nKlientë aktivë:\n`;
+            for (let k of klientet) {
+                let adr = `${k.remoteAddress}:${k.remotePort}`;
+                info += `- ${adr} | Mesazhe: ${statistika.mesazhePerKlient[adr]}\n`;
+            }
+            info += `Trafik total: ${statistika.trafikuTotalBytes} bytes\n`;
+            socket.write(info);
+            return;
+        }
+
