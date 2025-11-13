@@ -62,3 +62,61 @@ const server = net.createServer((socket) => {
     connections.delete(socket);
     updateStatsFile();
   });
+
+  const interval = setInterval(() => {
+    const client = connections.get(socket);
+    if (!client) {
+      clearInterval(interval);
+      return;
+    }
+    const timeout = client.role === 'admin' ? ADMIN_TIMEOUT : USER_TIMEOUT;
+    if (Date.now() - client.lastActive > timeout) {
+      socket.write('Timeout, connection closed due to inactivity.\n');
+      socket.end();
+      connections.delete(socket);
+      clearInterval(interval);
+      updateStatsFile();
+    }
+  }, 5000);
+});
+
+async function handleAdminCommand(socket, msg) {
+  const args = msg.split(' ');
+  const cmd = args[0].toLowerCase();
+
+  switch (cmd) {
+    case '/list':
+      fs.readdir(SERVER_FILES, (err, files) => {
+        if (err) return socket.write('Error reading directory\n');
+        socket.write('Files:\n' + files.join('\n') + '\n');
+      });
+      break;
+
+    case '/read':
+      if (!args[1]) return socket.write('Usage: /read <filename>\n');
+      const readPath = path.join(SERVER_FILES, args[1]);
+      if (fs.existsSync(readPath)) {
+        const content = fs.readFileSync(readPath, 'utf8');
+        socket.write(`\n${args[1]}:\n${content}\n`);
+      } else socket.write('File not found.\n');
+      break;
+
+    case '/delete':
+      if (!args[1]) return socket.write('Usage: /delete <filename>\n');
+      const delPath = path.join(SERVER_FILES, args[1]);
+      if (fs.existsSync(delPath)) {
+        fs.unlinkSync(delPath);
+        socket.write('File deleted.\n');
+      } else socket.write('File not found.\n');
+      break;
+
+    case '/info':
+      if (!args[1]) return socket.write('Usage: /info <filename>\n');
+      const infoPath = path.join(SERVER_FILES, args[1]);
+      if (fs.existsSync(infoPath)) {
+        const stats = fs.statSync(infoPath);
+        socket.write(
+          `Info for ${args[1]}:\nSize: ${stats.size} bytes\nCreated: ${stats.birthtime}\nModified: ${stats.mtime}\n`
+        );
+      } else socket.write('File not found.\n');
+      break;
