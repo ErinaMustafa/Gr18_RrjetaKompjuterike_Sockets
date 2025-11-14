@@ -106,3 +106,57 @@ const server = net.createServer((socket) => {
             if (fs.existsSync(filePath)) {
                 socket.write('Përmbajtja:\n' + fs.readFileSync(filePath, 'utf8') + '\n');
             } else socket.write('File nuk ekziston.\n');
+            } else if (mesazhi.startsWith('/delete')) {
+    const parts = mesazhi.split(' ');
+    if (parts.length < 2) return socket.write('Perdorimi: /delete <filename>\n');
+    const filePath = path.join('./server_files', parts[1]);
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        socket.write('File u fshi me sukses.\n');
+    } else socket.write('File nuk ekziston.\n');
+
+} else if (mesazhi.startsWith('/info')) {
+    const parts = mesazhi.split(' ');
+    if (parts.length < 2) return socket.write('Perdorimi: /info <filename>\n');
+    const filePath = path.join('./server_files', parts[1]);
+    if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        socket.write(`Madhesia: ${stats.size} bytes\nKrijuar me: ${stats.birthtime}\nModifikuar me: ${stats.mtime}\n`);
+    } else socket.write('File nuk ekziston.\n');
+
+} else if (mesazhi.startsWith('/upload')) {
+    const parts = mesazhi.split(' ');
+    if (parts.length < 2) return socket.write('Perdorimi: /upload <filename>\n');
+    fs.writeFileSync(`./server_files/${parts[1]}`, 'Ky është një file i derguar nga klienti.\n');
+    socket.write('File u ngarkua me sukses.\n');
+
+} else if (mesazhi.startsWith('/search')) {
+    const parts = mesazhi.split(' ');
+    if (parts.length < 2) return socket.write('Perdorimi: /search <keyword>\n');
+    const files = fs.readdirSync('./server_files');
+    const results = files.filter(f => f.includes(parts[1]));
+    socket.write(results.length ? 'U gjeten:\n' + results.join('\n') : 'Asnje file nuk u gjet.\n');
+
+} else if (mesazhi === 'PERSHENDETJE') {
+    socket.write('Serveri te pershendet!\n');
+
+} else {
+    if (socket.isAdmin) socket.write('Mesazhi u pranua nga serveri. (Admin)\n');
+    else setTimeout(() => socket.write('Mesazhi u pranua nga serveri.\n'), 1000);
+}
+
+socket.on('end', () => {
+    console.log(`Klienti u shkëput: ${adresaKlientit}`);
+    klientet = klientet.filter((k) => k !== socket);
+    statistika.lidhjeAktive--;
+});
+
+socket.on('error', (err) => {
+    console.log(`Gabim me klientin ${adresaKlientit}: ${err.message}`);
+});
+
+server.listen(PORTI, IP_ADRESA, () => {
+    console.log(`Serveri është në punë në ${IP_ADRESA}:${PORTI}`);
+});
+});
+
