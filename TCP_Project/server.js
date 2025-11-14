@@ -144,7 +144,7 @@ const server = net.createServer((socket) => {
     if (socket.isAdmin) socket.write('Mesazhi u pranua nga serveri. (Admin)\n');
     else setTimeout(() => socket.write('Mesazhi u pranua nga serveri.\n'), 1000);
 }
-
+      });
 socket.on('end', () => {
     console.log(`Klienti u shkëput: ${adresaKlientit}`);
     klientet = klientet.filter((k) => k !== socket);
@@ -157,6 +157,5 @@ socket.on('error', (err) => {
 
 server.listen(PORTI, IP_ADRESA, () => {
     console.log(`Serveri është në punë në ${IP_ADRESA}:${PORTI}`);
-});
-});
-
+}); 
+}); 
