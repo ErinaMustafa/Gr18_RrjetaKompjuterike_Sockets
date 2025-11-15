@@ -1,4 +1,3 @@
-
 const net = require('net');
 const fs = require('fs');
 const path = require('path');
@@ -155,7 +154,8 @@ socket.on('error', (err) => {
     console.log(`Gabim me klientin ${adresaKlientit}: ${err.message}`);
 });
 
+}); 
+
 server.listen(PORTI, IP_ADRESA, () => {
     console.log(`Serveri është në punë në ${IP_ADRESA}:${PORTI}`);
-}); 
-}); 
+});

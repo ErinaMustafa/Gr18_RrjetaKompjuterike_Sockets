@@ -1,0 +1,4 @@
+Computer networking is the practice of connecting two or more computing devices to exchange data and share resources through wired or wireless links.
+ It relies on communication protocols, which are sets of rules that govern data transmission. 
+ Key components include devices like switches, routers, and access points, which facilitate connectivity and data flow, 
+ making everything from email and online gaming to cloud storage possible. 
